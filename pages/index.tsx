@@ -1,23 +1,32 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { GetStaticProps } from 'next';
 import Head from 'next/head'
 import Image from 'next/image'
 import { GraphQLClient, gql } from 'graphql-request';
-import { documentToReactComponents } from '@contentful/rich-text-react-renderer';
-import type { Document } from '@contentful/rich-text-types';
+import { documentToReactComponents, Options } from '@contentful/rich-text-react-renderer';
+import { Document, BLOCKS } from '@contentful/rich-text-types';
+import dayjs from 'dayjs';
+import advancedFormat from 'dayjs/plugin/advancedFormat';
 
 import styles from '../styles/Home.module.css'
 
+dayjs.extend(advancedFormat);
+
 interface Props {
-  posts: {
-    blogPostCollection: {
-      items: {
-        title: string;
-        publishedAt: Date;
-        content: { json: Document }
-      }[];
-    }
-  }
+  assetCollection: {
+    items: {
+      sys: { id: string; };
+      url: string;
+      title: string;
+    }[];
+  };
+  blogPostCollection: {
+    items: {
+      title: string;
+      publishedAt: Date;
+      content: { json: Document }
+    }[];
+  };
 }
 
 export const getStaticProps: GetStaticProps<Props> = async () => {
@@ -40,19 +49,55 @@ export const getStaticProps: GetStaticProps<Props> = async () => {
           publishedAt
         }
       }
+      assetCollection {
+        items {
+          sys {
+            id
+          }
+          url
+          title
+        }
+      }
     }
   `;
 
-  const posts = await gqlClient.request(postsQuery);
+  let assetCollection: Props['assetCollection'];
+  let blogPostCollection: Props['blogPostCollection'];
+  try {
+    ({
+      assetCollection,
+      blogPostCollection,
+    } = await gqlClient.request(postsQuery));
+  } catch (error) {
+    console.error(error);
+    return {
+      props: {
+        assetCollection: { items: [] },
+        blogPostCollection: { items: [] },
+      }
+    }
+  }
 
   return {
     props: {
-      posts,
+      assetCollection,
+      blogPostCollection,
     }
   }
 };
 
-export default function Home(props: Props) {
+export default function Home({ assetCollection, blogPostCollection }: Props) {
+  const displayOptions: Options = {
+    renderNode: {
+      [BLOCKS.EMBEDDED_ASSET]: (node): ReactNode => {
+        const asset = assetCollection.items.find(({ sys: { id } }) => id === node.data.target.sys.id);
+        if (!asset) return null;
+
+        return <img src={asset.url} alt={asset.title} />;
+      }
+    }
+  }
+
   return (
     <div className={styles.container}>
       <Head>
@@ -62,11 +107,11 @@ export default function Home(props: Props) {
       </Head>
 
       <main className={styles.main}>
-        {props.posts.blogPostCollection.items.map(({ title, publishedAt, content }) => (
+        {blogPostCollection.items.map(({ title, publishedAt, content }) => (
           <div key={title}>
             <h2>{title}</h2>
-            <p>{publishedAt.toLocaleString()}</p>
-            {documentToReactComponents(content.json)}
+            <p>{dayjs(publishedAt).format('dddd, MMMM Do YYYY, h:mm:ss a')}</p>
+            {documentToReactComponents(content.json, displayOptions)}
           </div>
         ))}
       </main>
