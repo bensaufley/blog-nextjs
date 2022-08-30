@@ -22,10 +22,10 @@ interface Props {
 
 export const getStaticProps: GetStaticProps<Props> = async () => {
   const gqlClient = new GraphQLClient(`https://graphql.contentful.com/content/v1/spaces/${
-    process.env.SPACE_ID
+    process.env.CONTENTFUL_SPACE_ID
   }`, {
     headers: {
-      Authorization: `Bearer ${process.env.CDA_TOKEN}`,
+      Authorization: `Bearer ${process.env.CONTENTFUL_ACCESS_TOKEN}`,
     }
   });
 
