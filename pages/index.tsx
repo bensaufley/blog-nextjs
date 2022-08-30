@@ -63,11 +63,12 @@ export default function Home(props: Props) {
 
       <main className={styles.main}>
         {props.posts.blogPostCollection.items.map(({ title, publishedAt, content }) => (
-          <div>
+          <div key={title}>
             <h2>{title}</h2>
             <p>{publishedAt.toLocaleString()}</p>
             {documentToReactComponents(content.json)}
-          </div>))}
+          </div>
+        ))}
       </main>
 
       <footer className={styles.footer}>
