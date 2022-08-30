@@ -7,10 +7,15 @@ import { documentToReactComponents, Options } from '@contentful/rich-text-react-
 import { Document, BLOCKS } from '@contentful/rich-text-types';
 import dayjs from 'dayjs';
 import advancedFormat from 'dayjs/plugin/advancedFormat';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 
 import styles from '../styles/Home.module.css'
 
 dayjs.extend(advancedFormat);
+dayjs.extend(timezone);
+dayjs.extend(utc);
+dayjs.tz.setDefault('America/New_York');
 
 interface Props {
   assetCollection: {
@@ -110,7 +115,7 @@ export default function Home({ assetCollection, blogPostCollection }: Props) {
         {blogPostCollection.items.map(({ title, publishedAt, content }) => (
           <div key={title}>
             <h2>{title}</h2>
-            <p>{dayjs(publishedAt).format('dddd, MMMM Do YYYY, h:mm:ss a')}</p>
+            <p>{dayjs.tz(publishedAt, 'America/New_York').format('dddd, MMMM Do YYYY, h:mm:ss a')}</p>
             {documentToReactComponents(content.json, displayOptions)}
           </div>
         ))}
